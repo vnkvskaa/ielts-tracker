@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IELTS Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#1d2b53" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>IELTS Academic — трекер подготовки</h1>
+    <div id="sync-status" class="status"></div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Прогресс</h2>
+      <div id="heatmap" class="heatmap"></div>
+    </section>
+
+    <section class="card">
+      <h2>Задание на сегодня</h2>
+      <div class="task">
+        <h3>Writing</h3>
+        <p id="writing-prompt"></p>
+        <button id="writing-done-btn">Отметить выполненным</button>
+      </div>
+      <div class="task">
+        <h3>Speaking</h3>
+        <p id="speaking-prompt"></p>
+        <button id="speaking-done-btn">Отметить выполненным</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Добавить результат пробника</h2>
+      <form id="score-form">
+        <label>Раздел
+          <select name="section" required>
+            <option>Listening</option>
+            <option>Reading</option>
+            <option>Writing</option>
+            <option>Speaking</option>
+            <option>Overall</option>
+          </select>
+        </label>
+        <label>Балл
+          <input name="band" type="number" min="0" max="9" step="0.5" required />
+        </label>
+        <label>Источник
+          <input name="source" type="text" placeholder="Cambridge 18 Test 2" />
+        </label>
+        <label>Заметка
+          <input name="note" type="text" placeholder="необязательно" />
+        </label>
+        <button type="submit">Сохранить</button>
+      </form>
+
+      <table id="score-table">
+        <thead>
+          <tr><th>Дата</th><th>Раздел</th><th>Балл</th><th>Источник</th><th>Заметка</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr id="avg-row"></tr>
+        </tfoot>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Полезные ресурсы</h2>
+      <div id="resources"></div>
+    </section>
+
+    <section class="card">
+      <h2>Настройки синхронизации</h2>
+      <p class="hint">
+        Вставьте fine-grained GitHub Personal Access Token с доступом
+        <code>Contents: Read and write</code> только к репозиторию
+        <code>ielts-tracker</code>. Токен хранится локально в этом браузере
+        и никуда, кроме GitHub API, не отправляется.
+      </p>
+      <form id="token-form">
+        <input id="token-input" type="password" placeholder="github_pat_..." />
+        <button type="submit">Подключить</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
