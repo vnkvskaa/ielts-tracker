@@ -128,7 +128,7 @@ async function ghSave() {
 function setStatus(text, isError) {
   const el = document.getElementById('sync-status');
   el.textContent = text;
-  el.style.color = isError ? '#e5533d' : '#1d9a6c';
+  el.classList.toggle('status--error', Boolean(isError));
 }
 
 // ---- entries ----
@@ -139,7 +139,7 @@ function addEntry(entry) {
   ghSave();
 }
 
-// ---- heatmap ----
+// ---- heatmap (dot grid, weekday-aligned, per studied reference) ----
 function renderHeatmap() {
   const counts = {};
   for (const e of state.entries) counts[e.date] = (counts[e.date] || 0) + 1;
@@ -148,24 +148,74 @@ function renderHeatmap() {
   container.innerHTML = '';
   const days = 140;
   const today = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
+  const start = new Date(today);
+  start.setDate(start.getDate() - (days - 1));
+  const mondayIndex = (start.getDay() + 6) % 7; // Mon=0..Sun=6
+  for (let i = 0; i < mondayIndex; i++) {
+    const spacer = document.createElement('div');
+    spacer.className = 'hm-dot';
+    spacer.style.visibility = 'hidden';
+    container.appendChild(spacer);
+  }
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
     const key = d.toISOString().slice(0, 10);
     const c = counts[key] || 0;
-    const cell = document.createElement('div');
-    cell.className = 'hm-cell';
-    cell.title = `${key}: ${c} запис(ей)`;
-    cell.style.background = heatColor(c);
-    container.appendChild(cell);
+    const dot = document.createElement('div');
+    dot.className = 'hm-dot';
+    dot.title = `${key}: ${c} запис(ей)`;
+    dot.style.background = heatColor(c);
+    container.appendChild(dot);
   }
 }
 function heatColor(c) {
-  if (c === 0) return 'var(--hm-0)';
-  if (c === 1) return 'var(--hm-1)';
-  if (c === 2) return 'var(--hm-2)';
-  if (c === 3) return 'var(--hm-3)';
-  return 'var(--hm-4)';
+  if (c === 0) return 'var(--color-paper-3)';
+  if (c === 1) return 'color-mix(in oklch, var(--color-accent) 45%, var(--color-paper))';
+  if (c === 2) return 'color-mix(in oklch, var(--color-accent) 70%, var(--color-paper))';
+  if (c === 3) return 'var(--color-accent)';
+  return 'var(--color-accent-3)';
+}
+
+// ---- streak (honest — computed from real entries, consecutive days ending today/yesterday) ----
+function computeStreak() {
+  const days = new Set(state.entries.map((e) => e.date));
+  let streak = 0;
+  const cursor = new Date();
+  if (!days.has(todayStr())) cursor.setDate(cursor.getDate() - 1);
+  while (days.has(cursor.toISOString().slice(0, 10))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function renderStreak() {
+  const streak = computeStreak();
+  document.getElementById('nav-streak').textContent = `${streak} ${daysLabel(streak)}`;
+  animateCounter(document.getElementById('streak-counter'), streak);
+}
+
+function daysLabel(n) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 14) return 'дней';
+  if (mod10 === 1) return 'день';
+  if (mod10 >= 2 && mod10 <= 4) return 'дня';
+  return 'дней';
+}
+
+function animateCounter(el, target) {
+  const start = performance.now();
+  const duration = 1200;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || target === 0) { el.textContent = target; return; }
+  function tick(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(eased * target);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 // ---- today's task card ----
@@ -173,8 +223,25 @@ function renderTasks() {
   document.getElementById('writing-prompt').textContent = pickForToday(WRITING_PROMPTS);
   document.getElementById('speaking-prompt').textContent = pickForToday(SPEAKING_CUE_CARDS);
   const doneToday = (type) => state.entries.some((e) => e.type === type && e.date === todayStr());
-  document.getElementById('writing-done-btn').disabled = doneToday('task-writing');
-  document.getElementById('speaking-done-btn').disabled = doneToday('task-speaking');
+  const writingDone = doneToday('task-writing');
+  const speakingDone = doneToday('task-speaking');
+  document.getElementById('writing-done-btn').disabled = writingDone;
+  document.getElementById('speaking-done-btn').disabled = speakingDone;
+
+  const mark = document.getElementById('character-mark');
+  if (writingDone && speakingDone) mark.classList.add('is-complete');
+}
+
+// ---- character-moment star-burst (fires once, on the click that completes both tasks) ----
+function maybeCelebrate(clickEvent) {
+  const doneToday = (type) => state.entries.some((e) => e.type === type && e.date === todayStr());
+  if (!(doneToday('task-writing') && doneToday('task-speaking'))) return;
+  const star = document.createElement('div');
+  star.className = 'star-burst';
+  star.style.left = `${clickEvent.clientX + window.scrollX}px`;
+  star.style.top = `${clickEvent.clientY + window.scrollY}px`;
+  document.body.appendChild(star);
+  star.addEventListener('animationend', () => star.remove());
 }
 
 // ---- score history ----
@@ -222,15 +289,18 @@ function render() {
   renderHeatmap();
   renderTasks();
   renderScores();
+  renderStreak();
 }
 
 // ---- wiring ----
 function wireEvents() {
-  document.getElementById('writing-done-btn').addEventListener('click', () => {
+  document.getElementById('writing-done-btn').addEventListener('click', (e) => {
     addEntry({ type: 'task-writing', section: 'Writing', note: 'Daily writing task' });
+    maybeCelebrate(e);
   });
-  document.getElementById('speaking-done-btn').addEventListener('click', () => {
+  document.getElementById('speaking-done-btn').addEventListener('click', (e) => {
     addEntry({ type: 'task-speaking', section: 'Speaking', note: 'Daily speaking task' });
+    maybeCelebrate(e);
   });
 
   document.getElementById('score-form').addEventListener('submit', (e) => {
@@ -250,14 +320,18 @@ function wireEvents() {
   tokenInput.value = getToken();
   document.getElementById('token-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = e.target.querySelector('button');
     localStorage.setItem(TOKEN_KEY, tokenInput.value.trim());
     setStatus('Подключаюсь…');
+    btn.classList.add('is-loading');
     try {
       await ghFetch();
       render();
       setStatus('Подключено ✓');
     } catch (err) {
       setStatus(err.message, true);
+    } finally {
+      btn.classList.remove('is-loading');
     }
   });
 }
