@@ -435,7 +435,7 @@ function render() {
       </div>
     </div>
     ${heatRow(v.allRow, 15)}
-    <div class="quad-grid" style="grid-template-columns:repeat(2, 1fr);">
+    <div class="quad-grid">
       ${v.skillRows.map((row) => `<div class="mini-card"><div class="mini-card__label">${row.label}</div><div class="heat-weeks">${row.weeks.map((w) => heatWeek(w, 12)).join('')}</div></div>`).join('')}
     </div>
   </section>
@@ -443,7 +443,7 @@ function render() {
   <section class="card section-card">
     <p class="label">Scores</p>
     <h2 class="section-title" style="margin-bottom:18px;">Band progress by skill</h2>
-    <div class="quad-grid" style="grid-template-columns:repeat(2, 1fr);">${v.bandCharts.map(bandChartSvg).join('')}</div>
+    <div class="quad-grid">${v.bandCharts.map(bandChartSvg).join('')}</div>
   </section>
 
   <div class="two-col-grid">
