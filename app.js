@@ -22,17 +22,28 @@ function formatDate(iso) {
 
 function defaultState() {
   const d = new Date(); d.setDate(d.getDate() + 45);
-  return { examDate: toISO(d), targetBand: 7.5, entries: [] };
+  return { examDate: toISO(d), targetBand: 7.5, entries: [], links: [] };
 }
 function withDefaults(obj) {
   const d = defaultState();
-  return { examDate: (obj && obj.examDate) || d.examDate, targetBand: (obj && obj.targetBand) || d.targetBand, entries: (obj && obj.entries) || [] };
+  return {
+    examDate: (obj && obj.examDate) || d.examDate,
+    targetBand: (obj && obj.targetBand) || d.targetBand,
+    entries: (obj && obj.entries) || [],
+    links: (obj && obj.links) || [],
+  };
+}
+function normalizeUrl(u) {
+  const t = u.trim();
+  if (!t) return '';
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 }
 
 // ---- state ----
 let state = withDefaults(null);
 let sha = null;
 let form = { skill: 'listening', minutes: 30, score: '', essayDraft: '', essayRevised: '' };
+let linkForm = { label: '', url: '' };
 const decoCells = Array.from({ length: 48 }, () => ({ op: (Math.random() * 0.5 + 0.1).toFixed(2) }));
 
 function loadLocal() {
@@ -115,6 +126,23 @@ function addEntry() {
 }
 function deleteEntry(id) {
   state.entries = state.entries.filter((e) => e.id !== id);
+  saveLocal();
+  render();
+  ghSave();
+}
+
+// ---- links ----
+function addLink() {
+  const url = normalizeUrl(linkForm.url);
+  if (!url) return;
+  state.links = [{ id: crypto.randomUUID(), label: linkForm.label.trim(), url }, ...state.links];
+  linkForm = { label: '', url: '' };
+  saveLocal();
+  render();
+  ghSave();
+}
+function deleteLink(id) {
+  state.links = state.links.filter((l) => l.id !== id);
   saveLocal();
   render();
   ghSave();
@@ -377,6 +405,12 @@ function essayCard(es) {
     ${es.hasRevised ? `<div class="essay-card__label">Revised</div><div class="essay-card__text">${esc(es.revised)}</div>` : ''}
   </div>`;
 }
+function linkRow(l) {
+  return `<div class="link-row">
+    <a class="link-row__url" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label || l.url)}</a>
+    <button class="delete-btn" data-delete-link="${l.id}" aria-label="Delete link">&times;</button>
+  </div>`;
+}
 
 function render() {
   const v = computeVals();
@@ -486,6 +520,19 @@ function render() {
     ${v.hasEssays ? `<div class="essay-list">${v.essays.map(essayCard).join('')}</div>` : `<div class="empty-note">No essays saved yet — write a Writing session with draft text to see it here.</div>`}
   </section>
 
+  <section class="card section-card">
+    <p class="label">Resources</p>
+    <h2 class="section-title" style="margin-bottom:18px;">Links</h2>
+    <div class="log-form">
+      <input id="linkLabel" type="text" placeholder="Label (optional)" value="${esc(linkForm.label)}" />
+      <input id="linkUrl" type="text" placeholder="https://example.com" value="${esc(linkForm.url)}" />
+      <button id="addLink">Add</button>
+    </div>
+    <div class="link-list">
+      ${state.links.length ? state.links.map(linkRow).join('') : `<div class="empty-note">No links yet — add a study portal or resource above.</div>`}
+    </div>
+  </section>
+
   <section class="card settings-card">
     <p class="label">Sync</p>
     <p class="hint">Fine-grained GitHub token (Contents: Read/write, repository <code>ielts-tracker</code> only). Stored locally in this browser.</p>
@@ -508,6 +555,13 @@ function render() {
   if (revisedEl) revisedEl.addEventListener('change', (e) => { form.essayRevised = e.target.value; });
   document.getElementById('app').querySelectorAll('[data-delete]').forEach((btn) => {
     btn.addEventListener('click', () => deleteEntry(btn.getAttribute('data-delete')));
+  });
+
+  document.getElementById('linkLabel').addEventListener('change', (e) => { linkForm.label = e.target.value; });
+  document.getElementById('linkUrl').addEventListener('change', (e) => { linkForm.url = e.target.value; });
+  document.getElementById('addLink').addEventListener('click', addLink);
+  document.getElementById('app').querySelectorAll('[data-delete-link]').forEach((btn) => {
+    btn.addEventListener('click', () => deleteLink(btn.getAttribute('data-delete-link')));
   });
 
   const tokenInput = document.getElementById('token-input');

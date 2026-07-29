@@ -111,6 +111,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.15); cu
 .essay-fields { margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
 .essay-fields textarea { width: 100%; min-height: 64px; font-size: 0.8125rem; font-weight: 400; resize: vertical; }
 
+#linkLabel { flex: 1; min-width: 140px; }
+#linkUrl { flex: 1.6; min-width: 180px; }
+.link-list { display: flex; flex-direction: column; }
+.link-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1.5px solid oklch(var(--ink-lch) / 0.1); }
+.link-row__url { font-weight: 600; font-size: 0.875rem; color: inherit; text-decoration-color: oklch(var(--ink-lch) / 0.35); overflow-wrap: anywhere; }
+.link-row__url:hover { text-decoration-color: oklch(var(--ink-lch)); }
+
 .entry-list { flex: 1; overflow-y: auto; max-height: 260px; }
 .entry-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1.5px solid oklch(var(--ink-lch) / 0.1); }
 .entry-row__left { display: flex; align-items: center; gap: 10px; }
