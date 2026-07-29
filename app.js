@@ -7,6 +7,12 @@ const CACHE_KEY = 'ielts_data_cache';
 
 const SKILL_LABELS = { listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking' };
 const SKILL_INITIALS = { listening: 'L', reading: 'R', writing: 'W', speaking: 'S' };
+const TASK_TYPES = {
+  listening: ['Part 1', 'Part 2', 'Part 3', 'Part 4'],
+  reading: ['Passage 1', 'Passage 2', 'Passage 3'],
+  writing: ['Task 1', 'Task 2'],
+  speaking: ['Part 1', 'Part 2', 'Part 3'],
+};
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -42,7 +48,7 @@ function normalizeUrl(u) {
 // ---- state ----
 let state = withDefaults(null);
 let sha = null;
-let form = { skill: 'listening', minutes: 30, score: '', essayDraft: '', essayRevised: '' };
+let form = { skill: 'listening', taskType: '', minutes: 30, score: '', essayDraft: '', essayRevised: '' };
 let linkForm = { label: '', url: '' };
 const decoCells = Array.from({ length: 48 }, () => ({ op: (Math.random() * 0.5 + 0.1).toFixed(2) }));
 
@@ -114,6 +120,7 @@ function addEntry() {
     id: crypto.randomUUID(),
     date: toISO(new Date()),
     skill: form.skill,
+    taskType: form.taskType || null,
     minutes,
     score: form.score === '' ? null : Number(form.score),
     essay: (form.skill === 'writing' && (draft || revised)) ? { draft, revised } : null,
@@ -320,7 +327,10 @@ function computeVals() {
   });
 
   const bySkillScored = { listening: [], reading: [], writing: [], speaking: [] };
-  entries.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach((e) => { if (e.score != null) bySkillScored[e.skill].push(e); });
+  // entries is stored newest-first (unshift on add); reverse to oldest-first before the
+  // stable sort so same-day entries keep insertion (chronological) order instead of the
+  // reversed one, which otherwise plotted newer scores to the left of older ones.
+  entries.slice().reverse().sort((a, b) => a.date.localeCompare(b.date)).forEach((e) => { if (e.score != null) bySkillScored[e.skill].push(e); });
   const bandCharts = [
     buildBandChart('Listening', bySkillScored.listening, targetBand),
     buildBandChart('Reading', bySkillScored.reading, targetBand),
@@ -335,6 +345,7 @@ function computeVals() {
     dateLabel: formatDate(e.date),
     hasScore: e.score != null,
     hasEssay: !!(e.essay && e.essay.draft),
+    hasTaskType: !!e.taskType,
   }));
 
   const essays = entries.filter((e) => e.essay && e.essay.draft).map((e) => ({
@@ -383,6 +394,7 @@ function entryRow(e) {
     <div class="entry-row__left">
       <div class="entry-row__initial">${e.initial}</div>
       <span class="entry-row__skill">${e.skillLabel}</span>
+      ${e.hasTaskType ? `<span class="entry-row__date">${esc(e.taskType)}</span>` : ''}
       <span class="entry-row__date">${e.dateLabel}</span>
       ${e.hasEssay ? `<span class="entry-row__badge">essay</span>` : ''}
     </div>
@@ -500,6 +512,10 @@ function render() {
           <option value="writing" ${form.skill === 'writing' ? 'selected' : ''}>Writing</option>
           <option value="speaking" ${form.skill === 'speaking' ? 'selected' : ''}>Speaking</option>
         </select>
+        <select id="formTaskType">
+          <option value="">Task type</option>
+          ${TASK_TYPES[form.skill].map((t) => `<option value="${t}" ${form.taskType === t ? 'selected' : ''}>${t}</option>`).join('')}
+        </select>
         <input id="formMinutes" type="number" min="5" step="5" placeholder="min" value="${form.minutes}" />
         <input id="formScore" type="number" min="0" max="9" step="0.5" placeholder="score" value="${form.score}" />
         <button id="addEntry">Add</button>
@@ -545,7 +561,8 @@ function render() {
 
   document.getElementById('examDate').addEventListener('change', (e) => { state.examDate = e.target.value; saveLocal(); render(); ghSave(); });
   document.getElementById('targetBand').addEventListener('change', (e) => { state.targetBand = e.target.value; saveLocal(); render(); ghSave(); });
-  document.getElementById('formSkill').addEventListener('change', (e) => { form.skill = e.target.value; render(); });
+  document.getElementById('formSkill').addEventListener('change', (e) => { form.skill = e.target.value; form.taskType = ''; render(); });
+  document.getElementById('formTaskType').addEventListener('change', (e) => { form.taskType = e.target.value; });
   document.getElementById('formMinutes').addEventListener('change', (e) => { form.minutes = e.target.value; });
   document.getElementById('formScore').addEventListener('change', (e) => { form.score = e.target.value; });
   document.getElementById('addEntry').addEventListener('click', addEntry);
