@@ -5,82 +5,45 @@ const DATA_PATH = 'data.json';
 const TOKEN_KEY = 'ielts_gh_token';
 const CACHE_KEY = 'ielts_data_cache';
 
-const SECTIONS = ['Listening', 'Reading', 'Writing', 'Speaking', 'Overall'];
+const SKILL_LABELS = { listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking' };
+const SKILL_INITIALS = { listening: 'L', reading: 'R', writing: 'W', speaking: 'S' };
 
-// ---- prompt pools (deterministic "today's task") ----
-const WRITING_PROMPTS = [
-  'Some people think that governments should invest more in public transport instead of building new roads. To what extent do you agree or disagree?',
-  'Many people believe that social media has a negative effect on both individuals and society. Discuss both views and give your own opinion.',
-  'In some countries, young people are encouraged to work or travel for a year between finishing school and starting university studies. Discuss the advantages and disadvantages.',
-  'Describe a graph/chart you saw recently in the news (Task 1 style): summarise the main trends and make comparisons where relevant.',
-  'Some people think that unpaid community service should be a compulsory part of high school programmes. To what extent do you agree?',
-  'The advantages of having a global culture outweigh the disadvantages. To what extent do you agree or disagree?',
-  'Some people believe that it is best to accept a bad situation, others think it is better to try and improve it. Discuss both views.',
-  'Nowadays the way many people interact with each other has changed because of technology. In what ways has technology affected the types of relationships people make? Is this a positive or negative development?',
-  'Some people think that the best way to improve public health is by increasing the number of sports facilities. Others believe there are more effective ways. Discuss both views.',
-  'Describe a line graph showing changes in a country’s population over the last 50 years and predicted changes for the next 50 years.',
-];
-
-const SPEAKING_CUE_CARDS = [
-  'Describe a skill you learned recently. You should say: what it was, how you learned it, how long it took, and explain why you decided to learn it.',
-  'Describe a piece of technology you find useful. You should say: what it is, how often you use it, what you use it for, and explain why it is useful to you.',
-  'Describe a memorable journey you have taken. You should say: where you went, who you went with, what you did, and explain why it was memorable.',
-  'Describe a book that had an important influence on you. You should say: what the book was, what it was about, when you read it, and explain why it influenced you.',
-  'Describe a person who has influenced you a lot. You should say: who this person is, how you know them, what they have done, and explain why they influenced you.',
-  'Describe a decision that was difficult to make. You should say: what the decision was, when you made it, what the alternatives were, and explain why it was difficult.',
-  'Describe a place you would like to visit in the future. You should say: where it is, how you know about it, what you would do there, and explain why you want to visit it.',
-  'Describe an event that made you very happy. You should say: what the event was, when it happened, who was there, and explain why it made you happy.',
-];
-
-const RESOURCES = [
-  { group: 'Полные пробники', items: [
-    ['IELTS Online Tests', 'https://ieltsonlinetests.com'],
-    ['British Council — Road to IELTS', 'https://roadtoielts.com'],
-    ['Cambridge English — official practice materials', 'https://www.cambridgeenglish.org/exams-and-tests/ielts/'],
-  ]},
-  { group: 'Listening', items: [
-    ['IELTS Up — Listening practice', 'https://ieltsup.com/listening.html'],
-    ['E2 IELTS (YouTube)', 'https://www.youtube.com/@E2Test'],
-  ]},
-  { group: 'Reading', items: [
-    ['IELTS Reading Online', 'https://ieltsreadingonline.com'],
-  ]},
-  { group: 'Writing', items: [
-    ['IELTS Simon', 'https://ielts-simon.com'],
-    ['IELTS Liz', 'https://ieltsliz.com'],
-  ]},
-  { group: 'Speaking', items: [
-    ['IELTS Speaking cue cards — IELTS Liz', 'https://ieltsliz.com/ielts-speaking-part-2-topics/'],
-  ]},
-  { group: 'Словарный запас', items: [
-    ['Magoosh IELTS Blog', 'https://magoosh.com/ielts/'],
-  ]},
-];
-
-// ---- date helpers ----
-const todayStr = () => new Date().toISOString().slice(0, 10);
-function dayOfYear(d) {
-  const start = new Date(d.getFullYear(), 0, 0);
-  return Math.floor((d - start) / 86400000);
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-function pickForToday(pool) {
-  return pool[dayOfYear(new Date()) % pool.length];
+function toISO(d) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+function formatDate(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function defaultState() {
+  const d = new Date(); d.setDate(d.getDate() + 45);
+  return { examDate: toISO(d), targetBand: 7.5, entries: [] };
+}
+function withDefaults(obj) {
+  const d = defaultState();
+  return { examDate: (obj && obj.examDate) || d.examDate, targetBand: (obj && obj.targetBand) || d.targetBand, entries: (obj && obj.entries) || [] };
 }
 
 // ---- state ----
-let state = { entries: [] };
+let state = withDefaults(null);
 let sha = null;
+let form = { skill: 'listening', minutes: 30, score: '', essayDraft: '', essayRevised: '' };
+const decoCells = Array.from({ length: 48 }, () => ({ op: (Math.random() * 0.5 + 0.1).toFixed(2) }));
 
 function loadLocal() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) state = JSON.parse(raw);
+    if (raw) state = withDefaults(JSON.parse(raw));
   } catch (e) { /* ignore corrupt cache */ }
 }
 function saveLocal() {
   localStorage.setItem(CACHE_KEY, JSON.stringify(state));
 }
-
 function getToken() {
   return localStorage.getItem(TOKEN_KEY) || '';
 }
@@ -92,15 +55,14 @@ async function ghFetch() {
   const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${DATA_PATH}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
   });
-  if (res.status === 404) { sha = null; return true; } // no data.json yet
+  if (res.status === 404) { sha = null; return true; }
   if (!res.ok) throw new Error(`GitHub read failed: ${res.status}`);
   const json = await res.json();
   sha = json.sha;
-  state = JSON.parse(decodeURIComponent(escape(atob(json.content))));
+  state = withDefaults(JSON.parse(decodeURIComponent(escape(atob(json.content)))));
   saveLocal();
   return true;
 }
-
 async function ghSave() {
   const token = getToken();
   if (!token) { saveLocal(); return; }
@@ -115,219 +77,450 @@ async function ghSave() {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    setStatus(`Ошибка синхронизации (${res.status}). Данные сохранены только локально.`, true);
+    setStatus(`Sync failed (${res.status}). Saved locally only.`, true);
     saveLocal();
     return;
   }
   const json = await res.json();
   sha = json.content.sha;
   saveLocal();
-  setStatus('Синхронизировано ✓');
+  setStatus('Synced ✓');
 }
-
 function setStatus(text, isError) {
   const el = document.getElementById('sync-status');
+  if (!el) return;
   el.textContent = text;
   el.classList.toggle('status--error', Boolean(isError));
 }
 
 // ---- entries ----
-function addEntry(entry) {
-  state.entries.push({ id: crypto.randomUUID(), date: todayStr(), ...entry });
+function addEntry() {
+  const minutes = Number(form.minutes) || 0;
+  if (minutes <= 0) return;
+  const draft = form.essayDraft.trim();
+  const revised = form.essayRevised.trim();
+  const entry = {
+    id: crypto.randomUUID(),
+    date: toISO(new Date()),
+    skill: form.skill,
+    minutes,
+    score: form.score === '' ? null : Number(form.score),
+    essay: (form.skill === 'writing' && (draft || revised)) ? { draft, revised } : null,
+  };
+  state.entries = [entry, ...state.entries];
+  form.minutes = 30; form.score = ''; form.essayDraft = ''; form.essayRevised = '';
+  saveLocal();
+  render();
+  ghSave();
+}
+function deleteEntry(id) {
+  state.entries = state.entries.filter((e) => e.id !== id);
   saveLocal();
   render();
   ghSave();
 }
 
-// ---- heatmap (dot grid, weekday-aligned, per studied reference) ----
-function renderHeatmap() {
-  const counts = {};
-  for (const e of state.entries) counts[e.date] = (counts[e.date] || 0) + 1;
+// ---- heatmap levels ----
+function levelForSkillMinutes(mins) {
+  if (mins === 0) return 0;
+  if (mins < 20) return 1;
+  if (mins < 40) return 2;
+  if (mins < 70) return 3;
+  return 4;
+}
+function levelForAllMinutes(mins) {
+  if (mins === 0) return 0;
+  if (mins < 40) return 1;
+  if (mins < 80) return 2;
+  if (mins < 140) return 3;
+  return 4;
+}
+function heatLevelStyle(level) {
+  const specs = [null,
+    { pattern: 'radial-gradient(circle, #161616 0.9px, transparent 0.9px)', size: '7px 7px' },
+    { pattern: 'radial-gradient(circle, #161616 1.1px, transparent 1.1px)', size: '5px 5px' },
+    { pattern: 'radial-gradient(circle, #161616 1.3px, transparent 1.3px)', size: '4px 4px' },
+    null];
+  if (level === 0) return { base: 'oklch(var(--card-lch))', pattern: 'none', size: 'auto' };
+  if (level === 4) return { base: 'oklch(var(--ink-lch))', pattern: 'none', size: 'auto' };
+  return { base: 'oklch(var(--card-lch))', pattern: specs[level].pattern, size: specs[level].size };
+}
+function skillPattern(skillKey) {
+  return {
+    listening: 'none',
+    reading: 'repeating-linear-gradient(45deg, #e8e4dc 0 3px, transparent 3px 6px)',
+    writing: 'radial-gradient(circle, #e8e4dc 1.4px, transparent 1.4px)',
+    speaking: 'repeating-linear-gradient(45deg,#e8e4dc 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg,#e8e4dc 0 2px, transparent 2px 5px)',
+  }[skillKey];
+}
 
-  const container = document.getElementById('heatmap');
-  container.innerHTML = '';
-  const days = 140;
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(start.getDate() - (days - 1));
-  const mondayIndex = (start.getDay() + 6) % 7; // Mon=0..Sun=6
-  for (let i = 0; i < mondayIndex; i++) {
-    const spacer = document.createElement('div');
-    spacer.className = 'hm-dot';
-    spacer.style.visibility = 'hidden';
-    container.appendChild(spacer);
+// ---- band charts ----
+const CHART = { w: 320, h: 140, padL: 24, padR: 8, padT: 10, padB: 18, minBand: 4, maxBand: 9 };
+function yForBand(v) {
+  const plotH = CHART.h - CHART.padT - CHART.padB;
+  const clamped = Math.max(CHART.minBand, Math.min(CHART.maxBand, v));
+  return CHART.padT + plotH - ((clamped - CHART.minBand) / (CHART.maxBand - CHART.minBand)) * plotH;
+}
+function xForIndex(i, n) {
+  const plotW = CHART.w - CHART.padL - CHART.padR;
+  if (n <= 1) return CHART.padL + plotW / 2;
+  return CHART.padL + (i / (n - 1)) * plotW;
+}
+function buildSeries(scoredEntries) {
+  const pts = scoredEntries.map((e, i) => ({ x: xForIndex(i, scoredEntries.length), y: yForBand(e.score), score: e.score }));
+  const pathD = pts.length > 1 ? 'M ' + pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ') : '';
+  const points = pts.map((p) => ({ x: p.x.toFixed(1), y: p.y.toFixed(1) }));
+  const latest = pts.length ? scoredEntries[scoredEntries.length - 1].score : null;
+  const first = pts.length ? scoredEntries[0].score : null;
+  let detail = 'no scores yet';
+  if (latest != null && first != null) {
+    const delta = Math.round((latest - first) * 10) / 10;
+    detail = pts.length === 1 ? `band ${latest}` : `${latest} (${delta >= 0 ? '+' : ''}${delta} vs first)`;
   }
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    const key = d.toISOString().slice(0, 10);
-    const c = counts[key] || 0;
-    const dot = document.createElement('div');
-    dot.className = 'hm-dot';
-    dot.title = `${key}: ${c} запис(ей)`;
-    dot.style.background = heatColor(c);
-    container.appendChild(dot);
-  }
+  return { hasLine: pts.length > 1, points, pathD, detail };
 }
-function heatColor(c) {
-  if (c === 0) return 'var(--color-paper-3)';
-  if (c === 1) return 'color-mix(in oklch, var(--color-accent) 45%, var(--color-paper))';
-  if (c === 2) return 'color-mix(in oklch, var(--color-accent) 70%, var(--color-paper))';
-  if (c === 3) return 'var(--color-accent)';
-  return 'var(--color-accent-3)';
+function buildBandChart(label, scoredEntries, targetBand) {
+  const series = buildSeries(scoredEntries);
+  return {
+    label,
+    detail: series.detail,
+    gridLines: [4, 6, 8].map((v) => ({ y: yForBand(v).toFixed(1), textY: (yForBand(v) + 3).toFixed(1), label: v })),
+    hasTarget: !!targetBand,
+    targetY: yForBand(Number(targetBand)).toFixed(1),
+    series,
+  };
 }
 
-// ---- streak (honest — computed from real entries, consecutive days ending today/yesterday) ----
-function computeStreak() {
-  const days = new Set(state.entries.map((e) => e.date));
-  let streak = 0;
-  const cursor = new Date();
-  if (!days.has(todayStr())) cursor.setDate(cursor.getDate() - 1);
-  while (days.has(cursor.toISOString().slice(0, 10))) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
+// ---- derived view model ----
+function computeVals() {
+  const { entries, examDate, targetBand } = state;
 
-function renderStreak() {
-  const streak = computeStreak();
-  document.getElementById('nav-streak').textContent = `${streak} ${daysLabel(streak)}`;
-  animateCounter(document.getElementById('streak-counter'), streak);
-}
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const exam = new Date(examDate + 'T00:00:00');
+  const daysLeft = Math.max(0, daysBetween(today, exam));
 
-function daysLabel(n) {
-  const mod10 = n % 10, mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 14) return 'дней';
-  if (mod10 === 1) return 'день';
-  if (mod10 >= 2 && mod10 <= 4) return 'дня';
-  return 'дней';
-}
+  const startPlan = new Date(exam); startPlan.setDate(startPlan.getDate() - 90);
+  const totalSpan = Math.max(1, daysBetween(startPlan, exam));
+  const elapsed = Math.max(0, Math.min(totalSpan, daysBetween(startPlan, today)));
+  const examProgressPct = Math.round((elapsed / totalSpan) * 100);
 
-function animateCounter(el, target) {
-  const start = performance.now();
-  const duration = 1200;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce || target === 0) { el.textContent = target; return; }
-  function tick(now) {
-    const t = Math.min(1, (now - start) / duration);
-    const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = Math.round(eased * target);
-    if (t < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
+  const byDate = {};
+  const byDateSkill = {};
+  entries.forEach((e) => {
+    byDate[e.date] = (byDate[e.date] || 0) + e.minutes;
+    if (!byDateSkill[e.date]) byDateSkill[e.date] = { listening: 0, reading: 0, writing: 0, speaking: 0 };
+    byDateSkill[e.date][e.skill] += e.minutes;
+  });
 
-// ---- today's task card ----
-function renderTasks() {
-  document.getElementById('writing-prompt').textContent = pickForToday(WRITING_PROMPTS);
-  document.getElementById('speaking-prompt').textContent = pickForToday(SPEAKING_CUE_CARDS);
-  const doneToday = (type) => state.entries.some((e) => e.type === type && e.date === todayStr());
-  const writingDone = doneToday('task-writing');
-  const speakingDone = doneToday('task-speaking');
-  document.getElementById('writing-done-btn').disabled = writingDone;
-  document.getElementById('speaking-done-btn').disabled = speakingDone;
+  const hasEntry = (d) => !!byDate[toISO(d)];
+  let cursor = new Date(today);
+  if (!hasEntry(cursor)) cursor.setDate(cursor.getDate() - 1);
+  let currentStreak = 0;
+  while (hasEntry(cursor)) { currentStreak++; cursor.setDate(cursor.getDate() - 1); }
 
-  const mark = document.getElementById('character-mark');
-  if (writingDone && speakingDone) mark.classList.add('is-complete');
-}
+  const sortedDates = Object.keys(byDate).sort();
+  let bestStreak = 0, run = 0, prev = null;
+  sortedDates.forEach((ds) => {
+    const d = new Date(ds + 'T00:00:00');
+    if (prev && daysBetween(prev, d) === 1) run++; else run = 1;
+    bestStreak = Math.max(bestStreak, run);
+    prev = d;
+  });
+  bestStreak = Math.max(bestStreak, currentStreak);
 
-// ---- character-moment star-burst (fires once, on the click that completes both tasks) ----
-function maybeCelebrate(clickEvent) {
-  const doneToday = (type) => state.entries.some((e) => e.type === type && e.date === todayStr());
-  if (!(doneToday('task-writing') && doneToday('task-speaking'))) return;
-  const star = document.createElement('div');
-  star.className = 'star-burst';
-  star.style.left = `${clickEvent.clientX + window.scrollX}px`;
-  star.style.top = `${clickEvent.clientY + window.scrollY}px`;
-  document.body.appendChild(star);
-  star.addEventListener('animationend', () => star.remove());
-}
+  const totalMinutes = entries.reduce((a, e) => a + e.minutes, 0);
+  const totalHours = Math.round(totalMinutes / 6) / 10;
+  const totalSessions = entries.length;
+  const avgSessionLabel = totalSessions ? Math.round(totalMinutes / totalSessions) : 0;
 
-// ---- score history ----
-function renderScores() {
-  const tbody = document.querySelector('#score-table tbody');
-  tbody.innerHTML = '';
-  const scoreEntries = state.entries
-    .filter((e) => e.type === 'score')
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
-  for (const e of scoreEntries) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${e.date}</td><td>${e.section}</td><td>${e.band}</td><td>${e.source || ''}</td><td>${e.note || ''}</td>`;
-    tbody.appendChild(tr);
-  }
-  const avgRow = document.getElementById('avg-row');
-  avgRow.innerHTML = '';
-  for (const s of SECTIONS) {
-    const vals = scoreEntries.filter((e) => e.section === s).map((e) => Number(e.band));
-    const avg = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—';
-    const td = document.createElement('td');
-    td.textContent = `${s}: ${avg}`;
-    avgRow.appendChild(td);
-  }
-}
+  const streakMessage = currentStreak === 0 ? 'Log today to start a streak' : (hasEntry(today) ? 'Logged today — keep going' : 'Log today to keep it alive');
 
-// ---- resources ----
-function renderResources() {
-  const container = document.getElementById('resources');
-  container.innerHTML = '';
-  for (const group of RESOURCES) {
-    const h = document.createElement('h3');
-    h.textContent = group.group;
-    container.appendChild(h);
-    const ul = document.createElement('ul');
-    for (const [label, url] of group.items) {
-      const li = document.createElement('li');
-      li.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${label}</a>`;
-      ul.appendChild(li);
+  const WEEKS = 17;
+  const totalDays = WEEKS * 7;
+  const gridStart = new Date(today); gridStart.setDate(gridStart.getDate() - (totalDays - 1));
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+
+  function buildRow(rowKey, isAll) {
+    const weeks = [];
+    let d = new Date(gridStart);
+    for (let w = 0; w < WEEKS + 1; w++) {
+      const week = [];
+      for (let day = 0; day < 7; day++) {
+        const iso = toISO(d);
+        const mins = isAll ? (byDate[iso] || 0) : ((byDateSkill[iso] || {})[rowKey] || 0);
+        const level = isAll ? levelForAllMinutes(mins) : levelForSkillMinutes(mins);
+        const ls = heatLevelStyle(level);
+        week.push({ title: iso + (mins ? ` — ${mins}m` : ' — no session'), baseColor: ls.base, pattern: ls.pattern, patternSize: ls.size, borderOp: d > today ? 0 : 1 });
+        d.setDate(d.getDate() + 1);
+      }
+      weeks.push(week);
     }
-    container.appendChild(ul);
+    return weeks;
   }
+
+  const allRow = { label: 'All skills', weeks: buildRow('all', true) };
+  const skillRows = [
+    { label: 'Listening', weeks: buildRow('listening', false) },
+    { label: 'Reading', weeks: buildRow('reading', false) },
+    { label: 'Writing', weeks: buildRow('writing', false) },
+    { label: 'Speaking', weeks: buildRow('speaking', false) },
+  ];
+
+  const legendSwatches = [0, 1, 2, 3].map((lvl) => {
+    const ls = heatLevelStyle(lvl === 3 ? 4 : lvl);
+    return { baseColor: ls.base, pattern: ls.pattern, patternSize: ls.size };
+  });
+
+  const skillTotals = {};
+  Object.keys(SKILL_LABELS).forEach((k) => (skillTotals[k] = { minutes: 0, last: null, scores: [] }));
+  entries.forEach((e) => {
+    const t = skillTotals[e.skill]; if (!t) return;
+    t.minutes += e.minutes;
+    if (!t.last || e.date > t.last) t.last = e.date;
+    if (e.score != null) t.scores.push(e.score);
+  });
+  const maxSkillMinutes = Math.max(1, ...Object.values(skillTotals).map((t) => t.minutes));
+  let mostPracticedKey = null, mostPracticedMax = 0;
+  Object.keys(skillTotals).forEach((k) => { if (skillTotals[k].minutes > mostPracticedMax) { mostPracticedMax = skillTotals[k].minutes; mostPracticedKey = k; } });
+  const mostPracticedLabel = mostPracticedKey ? SKILL_LABELS[mostPracticedKey] : '—';
+
+  const skills = Object.keys(SKILL_LABELS).map((k) => {
+    const t = skillTotals[k];
+    const lastLabel = t.last ? formatDate(t.last) : '—';
+    const avgBandLabel = t.scores.length ? `avg band ${(Math.round((t.scores.reduce((a, b) => a + b, 0) / t.scores.length) * 10) / 10).toFixed(1)}` : 'no scores';
+    return { label: SKILL_LABELS[k], pattern: skillPattern(k), hoursLabel: Math.round(t.minutes / 6) / 10, pct: Math.round((t.minutes / maxSkillMinutes) * 100), lastLabel, avgBandLabel };
+  });
+
+  const bySkillScored = { listening: [], reading: [], writing: [], speaking: [] };
+  entries.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach((e) => { if (e.score != null) bySkillScored[e.skill].push(e); });
+  const bandCharts = [
+    buildBandChart('Listening', bySkillScored.listening, targetBand),
+    buildBandChart('Reading', bySkillScored.reading, targetBand),
+    buildBandChart('Writing', bySkillScored.writing, targetBand),
+    buildBandChart('Speaking', bySkillScored.speaking, targetBand),
+  ];
+
+  const recentEntries = entries.slice(0, 8).map((e) => ({
+    ...e,
+    skillLabel: SKILL_LABELS[e.skill],
+    initial: SKILL_INITIALS[e.skill],
+    dateLabel: formatDate(e.date),
+    hasScore: e.score != null,
+    hasEssay: !!(e.essay && e.essay.draft),
+  }));
+
+  const essays = entries.filter((e) => e.essay && e.essay.draft).map((e) => ({
+    id: e.id,
+    dateLabel: formatDate(e.date),
+    draft: e.essay.draft,
+    hasRevised: !!e.essay.revised,
+    revised: e.essay.revised,
+    hasScore: e.score != null,
+    score: e.score,
+  }));
+
+  return {
+    examDate, targetBand, daysLeft, examProgressPct,
+    currentStreak, bestStreak, streakMessage, totalHours, totalSessions, avgSessionLabel, mostPracticedLabel,
+    allRow, skillRows, legendSwatches, skills, bandCharts,
+    isWritingSkill: form.skill === 'writing',
+    hasEntries: entries.length > 0, hasEssays: essays.length > 0,
+    recentEntries, essays,
+  };
+}
+
+// ---- markup builders ----
+function heatCell(day, size) {
+  return `<div class="heat-cell" title="${esc(day.title)}" style="width:${size}px; height:${size}px; border-color: oklch(var(--ink-lch) / ${day.borderOp}); background-color: ${day.baseColor}; background-image: ${day.pattern}; background-size: ${day.patternSize};"></div>`;
+}
+function heatWeek(week, size) {
+  return `<div class="heat-week">${week.map((d) => heatCell(d, size)).join('')}</div>`;
+}
+function heatRow(row, size) {
+  return `<div class="heat-row"><div class="heat-row__label">${esc(row.label)}</div><div class="heat-weeks">${row.weeks.map((w) => heatWeek(w, size)).join('')}</div></div>`;
+}
+function bandChartSvg(bc) {
+  return `<div class="mini-card">
+    <div class="band-card__head"><span>${esc(bc.label)}</span><span>${esc(bc.detail)}</span></div>
+    <svg viewBox="0 0 320 140" class="band-svg">
+      ${bc.gridLines.map((g) => `<line x1="24" x2="312" y1="${g.y}" y2="${g.y}" stroke="oklch(var(--ink-lch) / 0.09)" stroke-width="1"></line><text x="2" y="${g.textY}" font-family="Space Mono, monospace" font-size="9" fill="oklch(var(--ink-soft-lch))">${g.label}</text>`).join('')}
+      ${bc.hasTarget ? `<line x1="24" x2="312" y1="${bc.targetY}" y2="${bc.targetY}" stroke="oklch(var(--ink-lch))" stroke-width="1.3" stroke-dasharray="5,4"></line>` : ''}
+      ${bc.series.hasLine ? `<path d="${bc.series.pathD}" fill="none" stroke="oklch(var(--ink-lch))" stroke-width="2"></path>` : ''}
+      ${bc.series.points.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="oklch(var(--card-lch))" stroke="oklch(var(--ink-lch))" stroke-width="2"></circle>`).join('')}
+    </svg>
+  </div>`;
+}
+function entryRow(e) {
+  return `<div class="entry-row">
+    <div class="entry-row__left">
+      <div class="entry-row__initial">${e.initial}</div>
+      <span class="entry-row__skill">${e.skillLabel}</span>
+      <span class="entry-row__date">${e.dateLabel}</span>
+      ${e.hasEssay ? `<span class="entry-row__badge">essay</span>` : ''}
+    </div>
+    <div class="entry-row__right">
+      <span class="entry-row__minutes">${e.minutes}m</span>
+      ${e.hasScore ? `<span class="entry-row__score">band ${e.score}</span>` : ''}
+      <button class="delete-btn" data-delete="${e.id}" aria-label="Delete entry">&times;</button>
+    </div>
+  </div>`;
+}
+function essayCard(es) {
+  return `<div class="essay-card">
+    <div class="essay-card__head">
+      <span class="essay-card__date">${es.dateLabel}</span>
+      ${es.hasScore ? `<span class="essay-card__score">band ${es.score}</span>` : ''}
+      <button class="delete-btn" data-delete="${es.id}" aria-label="Delete entry">&times;</button>
+    </div>
+    <div class="essay-card__label">Draft</div>
+    <div class="essay-card__text">${esc(es.draft)}</div>
+    ${es.hasRevised ? `<div class="essay-card__label">Revised</div><div class="essay-card__text">${esc(es.revised)}</div>` : ''}
+  </div>`;
 }
 
 function render() {
-  renderHeatmap();
-  renderTasks();
-  renderScores();
-  renderStreak();
-}
+  const v = computeVals();
 
-// ---- wiring ----
-function wireEvents() {
-  document.getElementById('writing-done-btn').addEventListener('click', (e) => {
-    addEntry({ type: 'task-writing', section: 'Writing', note: 'Daily writing task' });
-    maybeCelebrate(e);
-  });
-  document.getElementById('speaking-done-btn').addEventListener('click', (e) => {
-    addEntry({ type: 'task-speaking', section: 'Speaking', note: 'Daily speaking task' });
-    maybeCelebrate(e);
-  });
+  document.getElementById('app').innerHTML = `
+  <div class="deco"><div>${decoCells.map((c) => `<span style="color: oklch(var(--ink-lch) / ${c.op});">+</span>`).join('')}</div></div>
 
-  document.getElementById('score-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const form = e.target;
-    addEntry({
-      type: 'score',
-      section: form.section.value,
-      band: Number(form.band.value),
-      source: form.source.value.trim(),
-      note: form.note.value.trim(),
-    });
-    form.reset();
+  <header class="top">
+    <div>
+      <p class="label">Band tracker</p>
+      <h1>IELTS PREP</h1>
+    </div>
+    <div class="top__fields">
+      <div class="field field--band">
+        <p class="label">Target band</p>
+        <input id="targetBand" type="number" step="0.5" min="1" max="9" value="${v.targetBand}" />
+      </div>
+      <div class="field field--date">
+        <p class="label">Exam date</p>
+        <input id="examDate" type="date" value="${v.examDate}" />
+      </div>
+    </div>
+  </header>
+  <p class="status" id="sync-status"></p>
+
+  <div class="stats-grid">
+    <div class="card">
+      <p class="label">Countdown to exam</p>
+      <div class="stat-row"><div class="stat-num">${v.daysLeft}</div><div class="stat-unit mono">days left</div></div>
+      <div class="progress-track"><div class="progress-fill" style="width: ${v.examProgressPct}%;"></div></div>
+    </div>
+    <div class="card card--dark">
+      <p class="label" style="color:inherit; opacity:0.8;">Current streak</p>
+      <div class="stat-row"><div class="stat-num">${v.currentStreak}</div><div class="stat-unit mono">days</div></div>
+      <div class="stat-note">${v.streakMessage}</div>
+    </div>
+    <div class="card">
+      <p class="label">Best streak</p>
+      <div class="stat-row"><div class="stat-num">${v.bestStreak}</div><div class="stat-unit mono">days</div></div>
+      <div class="stat-note">${v.totalHours}h total</div>
+    </div>
+    <div class="card">
+      <p class="label">Sessions</p>
+      <div class="stat-row"><div class="stat-num">${v.totalSessions}</div><div class="stat-unit mono">logged</div></div>
+      <div class="stat-note stat-note--wrap">avg ${v.avgSessionLabel}m &middot; fave ${v.mostPracticedLabel}</div>
+    </div>
+  </div>
+
+  <section class="card section-card">
+    <div class="section-head">
+      <div><p class="label" style="margin-bottom:4px;">Consistency</p><h2 class="section-title">Activity by skill &middot; 17 weeks</h2></div>
+      <div class="legend">
+        <span>less</span>
+        <div class="legend-swatches">${v.legendSwatches.map((sw) => `<div class="swatch" style="background-color: ${sw.baseColor}; background-image: ${sw.pattern}; background-size: ${sw.patternSize};"></div>`).join('')}</div>
+        <span>more</span>
+      </div>
+    </div>
+    ${heatRow(v.allRow, 15)}
+    <div class="quad-grid" style="grid-template-columns:repeat(2, 1fr);">
+      ${v.skillRows.map((row) => `<div class="mini-card"><div class="mini-card__label">${row.label}</div><div class="heat-weeks">${row.weeks.map((w) => heatWeek(w, 12)).join('')}</div></div>`).join('')}
+    </div>
+  </section>
+
+  <section class="card section-card">
+    <p class="label">Scores</p>
+    <h2 class="section-title" style="margin-bottom:18px;">Band progress by skill</h2>
+    <div class="quad-grid" style="grid-template-columns:repeat(2, 1fr);">${v.bandCharts.map(bandChartSvg).join('')}</div>
+  </section>
+
+  <div class="two-col-grid">
+    <section class="card">
+      <p class="label">Breakdown</p>
+      <h2 class="section-title" style="margin-bottom:22px;">By skill</h2>
+      ${v.skills.map((s) => `<div class="skill-item">
+        <div class="skill-item__meta"><span class="skill-item__name">${s.label}</span><span class="skill-item__stats">${s.hoursLabel}h &middot; ${s.avgBandLabel} &middot; last ${s.lastLabel}</span></div>
+        <div class="skill-bar"><div class="skill-bar__fill" style="background-image: ${s.pattern}; width: ${s.pct}%;"></div></div>
+      </div>`).join('')}
+    </section>
+
+    <section class="card" style="display:flex; flex-direction:column;">
+      <p class="label">Log</p>
+      <h2 class="section-title" style="margin-bottom:18px;">Today's session</h2>
+      <div class="log-form">
+        <select id="formSkill">
+          <option value="listening" ${form.skill === 'listening' ? 'selected' : ''}>Listening</option>
+          <option value="reading" ${form.skill === 'reading' ? 'selected' : ''}>Reading</option>
+          <option value="writing" ${form.skill === 'writing' ? 'selected' : ''}>Writing</option>
+          <option value="speaking" ${form.skill === 'speaking' ? 'selected' : ''}>Speaking</option>
+        </select>
+        <input id="formMinutes" type="number" min="5" step="5" placeholder="min" value="${form.minutes}" />
+        <input id="formScore" type="number" min="0" max="9" step="0.5" placeholder="score" value="${form.score}" />
+        <button id="addEntry">Add</button>
+      </div>
+      ${v.isWritingSkill ? `<div class="essay-fields">
+        <textarea id="formEssayDraft" placeholder="Paste your essay draft (optional)">${esc(form.essayDraft)}</textarea>
+        <textarea id="formEssayRevised" placeholder="Revised version (optional)">${esc(form.essayRevised)}</textarea>
+      </div>` : ''}
+      <div class="entry-list">
+        ${v.hasEntries ? v.recentEntries.map(entryRow).join('') : `<div class="empty-note">No sessions logged yet — add your first one above.</div>`}
+      </div>
+    </section>
+  </div>
+
+  <section class="card section-card">
+    <p class="label">Writing</p>
+    <h2 class="section-title" style="margin-bottom:18px;">Essay drafts</h2>
+    ${v.hasEssays ? `<div class="essay-list">${v.essays.map(essayCard).join('')}</div>` : `<div class="empty-note">No essays saved yet — write a Writing session with draft text to see it here.</div>`}
+  </section>
+
+  <section class="card settings-card">
+    <p class="label">Sync</p>
+    <p class="hint">Fine-grained GitHub token (Contents: Read/write, repository <code>ielts-tracker</code> only). Stored locally in this browser.</p>
+    <form id="token-form" class="token-form">
+      <input id="token-input" type="password" placeholder="github_pat_..." value="${esc(getToken())}" />
+      <button type="submit">Connect</button>
+    </form>
+  </section>
+  `;
+
+  document.getElementById('examDate').addEventListener('change', (e) => { state.examDate = e.target.value; saveLocal(); render(); ghSave(); });
+  document.getElementById('targetBand').addEventListener('change', (e) => { state.targetBand = e.target.value; saveLocal(); render(); ghSave(); });
+  document.getElementById('formSkill').addEventListener('change', (e) => { form.skill = e.target.value; render(); });
+  document.getElementById('formMinutes').addEventListener('change', (e) => { form.minutes = e.target.value; });
+  document.getElementById('formScore').addEventListener('change', (e) => { form.score = e.target.value; });
+  document.getElementById('addEntry').addEventListener('click', addEntry);
+  const draftEl = document.getElementById('formEssayDraft');
+  if (draftEl) draftEl.addEventListener('change', (e) => { form.essayDraft = e.target.value; });
+  const revisedEl = document.getElementById('formEssayRevised');
+  if (revisedEl) revisedEl.addEventListener('change', (e) => { form.essayRevised = e.target.value; });
+  document.getElementById('app').querySelectorAll('[data-delete]').forEach((btn) => {
+    btn.addEventListener('click', () => deleteEntry(btn.getAttribute('data-delete')));
   });
 
   const tokenInput = document.getElementById('token-input');
-  tokenInput.value = getToken();
   document.getElementById('token-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
     localStorage.setItem(TOKEN_KEY, tokenInput.value.trim());
-    setStatus('Подключаюсь…');
+    setStatus('Connecting…');
     btn.classList.add('is-loading');
     try {
       await ghFetch();
       render();
-      setStatus('Подключено ✓');
+      setStatus('Connected ✓');
     } catch (err) {
       setStatus(err.message, true);
     } finally {
@@ -339,21 +532,18 @@ function wireEvents() {
 async function init() {
   loadLocal();
   render();
-  wireEvents();
   if (getToken()) {
     try {
-      setStatus('Синхронизация…');
+      setStatus('Syncing…');
       await ghFetch();
       render();
-      setStatus('Синхронизировано ✓');
+      setStatus('Synced ✓');
     } catch (err) {
-      setStatus(`${err.message} (работаем с локальными данными)`, true);
+      setStatus(`${err.message} (using local data)`, true);
     }
   } else {
-    setStatus('Не подключено к GitHub — данные только в этом браузере');
+    setStatus('Not connected to GitHub — data stays in this browser only');
   }
-  renderResources();
-
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js');
   }

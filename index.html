@@ -1,123 +1,20 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>IELTS Tracker</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <meta name="theme-color" content="#f7f3e8" />
+  <meta name="theme-color" content="#e9e6dd" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav class="nav-pill">
-    <span class="nav-pill__mark" aria-hidden="true"></span>
-    <span class="nav-pill__word">IELTS Tracker</span>
-    <span class="nav-pill__streak" id="nav-streak">0 дней</span>
-    <a class="nav-pill__settings" href="#settings" aria-label="Настройки синхронизации">⚙</a>
-  </nav>
-
-  <header class="hero">
-    <p class="hero__eyebrow mono-label">Academic · подготовка</p>
-    <div class="hero__row">
-      <div class="hero__streak-mark" id="character-mark" aria-hidden="true"></div>
-      <div class="hero__counter" id="streak-counter">0</div>
-      <div class="hero__streak-label">дней подряд</div>
-    </div>
-    <h1 class="hero__headline">Немного каждый день — и балл сдвинется.</h1>
-    <p class="status" id="sync-status"></p>
-  </header>
-
-  <main class="bento">
-    <article class="cell cell--2x2 cell--neutral" id="tile-heatmap">
-      <h2 class="cell__title">Прогресс</h2>
-      <div class="heatmap-wrap">
-        <div class="heatmap-days">
-          <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
-        </div>
-        <div id="heatmap" class="heatmap"></div>
-      </div>
-    </article>
-
-    <article class="cell cell--1x1 cell--pear" id="tile-writing">
-      <h2 class="cell__title">Writing на сегодня</h2>
-      <p class="cell__prompt" id="writing-prompt"></p>
-      <button class="btn btn--soft btn--pear" id="writing-done-btn">Готово</button>
-    </article>
-
-    <article class="cell cell--1x1 cell--cyan" id="tile-speaking">
-      <h2 class="cell__title">Speaking на сегодня</h2>
-      <p class="cell__prompt" id="speaking-prompt"></p>
-      <button class="btn btn--soft btn--cyan" id="speaking-done-btn">Готово</button>
-    </article>
-
-    <article class="cell cell--2x1 cell--neutral" id="tile-score-form">
-      <h2 class="cell__title">Результат пробника</h2>
-      <form id="score-form" class="score-form">
-        <label>Раздел
-          <select name="section" required>
-            <option>Listening</option>
-            <option>Reading</option>
-            <option>Writing</option>
-            <option>Speaking</option>
-            <option>Overall</option>
-          </select>
-        </label>
-        <label>Балл
-          <input name="band" type="number" min="0" max="9" step="0.5" required />
-        </label>
-        <label>Источник
-          <input name="source" type="text" placeholder="Cambridge 18 Test 2" />
-        </label>
-        <label>Заметка
-          <input name="note" type="text" placeholder="необязательно" />
-        </label>
-        <button type="submit" class="btn btn--pear">Сохранить</button>
-      </form>
-    </article>
-
-    <article class="cell cell--2x2 cell--cyan" id="tile-scores">
-      <h2 class="cell__title">История баллов</h2>
-      <div class="table-scroll">
-        <table id="score-table">
-          <thead>
-            <tr><th>Дата</th><th>Раздел</th><th>Балл</th><th>Источник</th><th>Заметка</th></tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot>
-            <tr id="avg-row"></tr>
-          </tfoot>
-        </table>
-      </div>
-    </article>
-
-    <article class="cell cell--2x1 cell--mint" id="tile-resources">
-      <h2 class="cell__title">Полезные ресурсы</h2>
-      <div id="resources" class="resources"></div>
-    </article>
-
-    <article class="cell cell--1x1 cell--lavender" id="settings">
-      <h2 class="cell__title">Синхронизация</h2>
-      <p class="hint">
-        Fine-grained GitHub-токен (Contents: Read/write, только репозиторий
-        <code>ielts-tracker</code>). Хранится локально в браузере.
-      </p>
-      <form id="token-form" class="token-form">
-        <input id="token-input" type="password" placeholder="github_pat_..." />
-        <button type="submit" class="btn btn--outline btn--ink">Подключить</button>
-      </form>
-    </article>
-  </main>
-
-  <footer class="footer-statement">
-    <p class="footer-statement__line">Маленькая привычка, доведённая до 7.5.</p>
-    <p class="footer-statement__meta">IELTS Tracker · личный трекер, данные синхронизируются через ваш GitHub-репозиторий</p>
-  </footer>
-
+  <div class="wrap" id="app"></div>
   <script src="app.js"></script>
 </body>
 </html>
