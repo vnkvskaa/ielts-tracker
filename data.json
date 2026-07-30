@@ -3,6 +3,17 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "c512f855-06ff-429a-a3a2-368c221d731b",
+      "date": "2026-07-30",
+      "skill": "writing",
+      "minutes": 40,
+      "score": 5.5,
+      "essay": {
+        "draft": "More and more people are doing business and conducting meetings through video call online. What are the advantages and disadvantages of this?\n\n\n\nIt is undeniable that nowadays people are widely using Zoom and another tools for making online meetings. Yet it has its own disadvantages, video calls made a leap forward in a new approach to business. … This essay will argue the benefits and downsides of this new working pattern. \n\nTo begin with, I suggest consider the main advantages of this fresh utilites. Clearly, with Google Meet or Zoom you as a businessman are able to make a deal with anyone whether your partner are leaving in a near district or across the globe. For instanse, I can become an entrepreneur and build a company in China while living in Russia. Thus it blends the line between person born in metropolis and tiny town, and makes their opportunities equal. The second main advantage is the ability to use cutting-edge technologies in your tasks. Big companies such as Rostelecom or Apple implement AI to facilitate meetings or make workflow convenient. As for me, I use Claude AI to make brief descriptions and connect it to my callendar – an updated to-do list is already on your app after a couple of seconds.\n\nOn the other hand, fully remote style is a double-edged sword, and even though it has positive impact upon us, there are some disadvantages. Average schedule of a person in bigtech company ranks with calls and not all of them are really useful. It reqiures a strong discipline to keep focus in these conditions and allocate your own resources wisely. Second of all, it takes much more efforts to bond with your interlocutor distantly. You can’t feel emotions of the person on the other end of the line. With that said, a wide range of companies started to do away with video format of work, and seek new ways to shape processes.\n\nTo conclude, appearing of new ways to do business is great, but has its restrictions. It could support if you know how to do it right.",
+        "revised": ""
+      }
+    },
+    {
       "id": "d31c493d-4d56-4ecd-a669-fe65b0ac3c8e",
       "date": "2026-07-30",
       "skill": "writing",
