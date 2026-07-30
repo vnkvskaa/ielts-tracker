@@ -33,5 +33,11 @@
       "essay": null
     }
   ],
-  "links": []
+  "links": [
+    {
+      "id": "e5e61e7a-858f-4dd3-bf2c-e3e3f2ce40c3",
+      "label": "Essay Checker",
+      "url": "https://engnovate.com/ielts-writing-task-2-essay-checker/"
+    }
+  ]
 }
