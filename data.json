@@ -3,6 +3,14 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "5faa1640-d00a-4427-badb-f98e7bb3b448",
+      "date": "2026-08-01",
+      "skill": "reading",
+      "minutes": 48,
+      "score": 8,
+      "essay": null
+    },
+    {
       "id": "249ccfe6-1035-4ecc-880b-281d6eee80e5",
       "date": "2026-08-01",
       "skill": "writing",
