@@ -3,6 +3,17 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "7bc2b871-7c8e-4537-b431-1c5094515597",
+      "date": "2026-08-03",
+      "skill": "writing",
+      "minutes": 55,
+      "score": 6.5,
+      "essay": {
+        "draft": "Too many children are spend most of their free time using screens. Why is this a problem? What solutions can you suggest?",
+        "revised": "New technology age brings us a lot of pleasant things: we can communicate and work regardless of location, study faster and easier, optimise our routine. However, it could cause problems and affect people. With that said, we need to pay more attention to the weaker ones which is young people without big life experience. Parents need to change their approach and raise kids differently. This essay examines problems caused by the widespread usage of phones by children, and measures, that could be taken. \n\nIt is undeniable that staring at the screen of the gadget is harmful both for child’s health and their social life. To begin with, it affects everything in person’s body: from posture to the ability to see. Especially when we talk about young people, because the way they behave in an early age becomes a base for their future.   Further drawback is that school age children are inclined to avoid reality and hide inside imaginary worlds, such as games and social networks, instead of real ones. This could happen because of plenty of reasons. For instance, bullying at school, too controlling parents, and other trials and tribulations they face. Moreover, intentions of advertisers and game designers does not help it: state-of-the-art gadgets, social media and games are designed to be addictive. And e-commerce giants often choose higher income over young minds’ wellbeing. \n\nThus, contemporary digital-age parenting requires more attention to the ways of raising kids. These are some solutions I could offer to solve or prevent the problems. I think that communication is a key. Talking with your loved ones and finding a way to interest them in the real world rather than virtual one. Parents need to build a rapport instead of just patronising. It could be challenging considering age gap and generational differencies. Although it is extremely important not to impose preferred ways to spend time but describe the reasons to motivate a young person. If this method does not work for you, it would be helpful to implement special applications to reduce screen time and apply restrictions for particular stuff. \n\nIn conclusion, the amount of time people spend with the cutting-edge technology are not benign. It is significantly important to control it when it comes to the younger generation. Not simply because overusing a phone affects person’s body. But alse because It causes socialising problems and addictions. Happily, there is some tools to help such as rapport-building and cutting off the screen time apps."
+      }
+    },
+    {
       "id": "77972403-65a3-4e4b-94d4-a94d26bb5374",
       "date": "2026-08-03",
       "skill": "reading",
