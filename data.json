@@ -3,6 +3,17 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "ec41b5e8-12f6-4a9b-9d44-9911ee36990a",
+      "date": "2026-08-13",
+      "skill": "writing",
+      "minutes": 40,
+      "score": 6,
+      "essay": {
+        "draft": "Nowadays, more people travel abroad for tourism than ever before. Do you think this is a positive or negative development?",
+        "revised": "Travelling is becoming more and more popular recently with an increasing number of people discovering other countries. It is clear, that this demand can cause not only positive but also negative effects, such as wider gap between reach and poor people, pollutions and the harm to environment. Nonetheless, I think that it is mostly a positive development. This essay will examine advantages of the widespread travel popularity. \n\nThe trend impact both individuals and governments. To begin with, society gets more opportunities for education: seeing something with your own eyes is much more effective than reading plain book without pictures. People with the travel bug will enhance their ability to think out of the box, as well as decision making skills, and cognitive abilities. Moreover, you can become cosmopolitan and tolerant person, and learn how to be culturally sensitive. Yet you could achieve it even without going abroad, the opportunity to immerse headfirst a new culture makes it more attainable. \n\nCountries as a whole also could be affected by the abroad travelling virality. Globalisation opened a door for the exchanging of the best practices in science, medicine, tech, etc. Going to another country, networking, making new aquaintainces makes it possible. And, as for me, the biggest benefit is the contribution to the economy development of countries with lots of tourist destinations. Countries can offer more jobs for citizens, maintain and develop infrastructure, and allocate more resources to civils’ needs. \n\nIn a conclusion, I think travelling not only domestic but also abroad is a great tool for both society and governments. Although it is not without its flaws, the benefits are undeniable."
+      }
+    },
+    {
       "id": "7bc2b871-7c8e-4537-b431-1c5094515597",
       "date": "2026-08-03",
       "skill": "writing",
