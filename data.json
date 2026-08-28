@@ -3,6 +3,15 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "ad7e45f7-da35-4c0e-81f3-c0932e9a3bd4",
+      "date": "2026-08-28",
+      "skill": "speaking",
+      "taskType": null,
+      "minutes": 40,
+      "score": 6,
+      "essay": null
+    },
+    {
       "id": "8788781b-89d9-4d2a-b2f2-121b3003c4c5",
       "date": "2026-08-27",
       "skill": "listening",
