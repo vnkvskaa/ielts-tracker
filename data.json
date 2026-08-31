@@ -3,6 +3,15 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "82981f73-0432-426b-a4e7-f3c1339b751c",
+      "date": "2026-08-31",
+      "skill": "reading",
+      "taskType": null,
+      "minutes": 60,
+      "score": 8.5,
+      "essay": null
+    },
+    {
       "id": "2aa2641f-04b5-47fb-827a-962b84c61bbb",
       "date": "2026-08-30",
       "skill": "speaking",
