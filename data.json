@@ -3,6 +3,18 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "467e9af8-2ac8-4472-a506-af0e908c3a3a",
+      "date": "2026-09-05",
+      "skill": "writing",
+      "taskType": "Task 2",
+      "minutes": 50,
+      "score": 5.5,
+      "essay": {
+        "draft": "",
+        "revised": "Nowadays, the idea of solo life is becoming widespread. Although it sounds great as a concept, I think it is a double-edged sword. This essay examines both sides of the matter. \n\nTo begin with, I would like to discuss the advantages of living alone. First of all, it makes you more flexible in your decisions. Each individual can be free to choose their focus and ultimate goal in life. Whether it is the drastic change of career path or just a decision about plans for spending free time, people don’t need to consider any other opinion. A lot of people, who spend their whole life with partners or kids, do not know what is their preferences are or how to decide anything. Moreover, without having to be around other person all the time, it is more attractive to go out and socialise outdoors. With that said, living by yourself makes person more self-aware and encourages to be a part of healthier community.\n\nHowever, there is room for downfalls. In modern society, there are enough temptations to not go outside at all. Cutting-edge technology taught us that we have everything online – social media and messengers, grocery shipping, clothes shopping, entertainment, remote jobs, you name it. Usually there is no need to go out of your flat. Some people indeed could use it as an escape from reality, and avoid a necessity of being a part of community. Also there are categories of people who need company, such as old people, for example. As for me, I think the right way to solve this kind of problem is to make sure everyone around you is all right and don’t need any help. As well as provide support to the person in need and teach them to ask for help. \n\nIn conclusion, the desire to live solo is not a threat to community cohesion itself. It does not urge us to stop keeping in touch with each other. Yet it has its own cons, generally this concept is healthier for individuals."
+      }
+    },
+    {
       "id": "31ec6a81-91a8-46da-a102-b030c743c5d4",
       "date": "2026-09-04",
       "skill": "writing",
