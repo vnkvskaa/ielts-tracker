@@ -3,6 +3,15 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "d214eb62-ac77-472f-8761-aca61ecbc9c3",
+      "date": "2026-09-15",
+      "skill": "listening",
+      "taskType": null,
+      "minutes": 2,
+      "score": null,
+      "essay": null
+    },
+    {
       "id": "32441581-5353-4349-8a17-b7d13f123070",
       "date": "2026-09-14",
       "skill": "listening",
