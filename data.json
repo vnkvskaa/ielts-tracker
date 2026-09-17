@@ -3,6 +3,15 @@
   "targetBand": 7.5,
   "entries": [
     {
+      "id": "e5b2d5a3-4259-42b3-8236-5ea304d15b85",
+      "date": "2026-09-17",
+      "skill": "writing",
+      "taskType": "Task 1",
+      "minutes": 20,
+      "score": 6.5,
+      "essay": null
+    },
+    {
       "id": "b32928a8-e7ee-4021-8fca-8b7a347600df",
       "date": "2026-09-17",
       "skill": "writing",
